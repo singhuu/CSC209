@@ -1,0 +1,251 @@
+Script started on 2020-03-18 21:07:07-0400
+]0;singh800@wolf:/h/u15/c8/00/singh800/singh800/lab10wolf:~/singh800/lab10$ exit[Kgdb bf[Kufserver
+GNU gdb (Ubuntu 8.1-0ubuntu3.2) 8.1.0.20180409-git
+Copyright (C) 2018 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+<http://www.gnu.org/software/gdb/documentation/>.
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from bufserver...done.
+(gdb) break set_up_server_socket 
+Breakpoint 1 at 0xf10: file socket.c, line 35.
+(gdb) run
+Starting program: /h/u15/c8/00/singh800/singh800/lab10/bufserver 
+
+Breakpoint 1, set_up_server_socket (
+    self=0x555555757260, num_queue=5) at socket.c:35
+35      int set_up_server_socket(struct sockaddr_in *self, int num_queue) {
+(gdb) n
+36          int soc = socket(PF_INET, SOCK_STREAM, 0);
+(gdb) 
+37          if (soc < 0) {
+(gdb) 
+44          int on = 1;
+(gdb) 
+45          int status = setsockopt(soc, SOL_SOCKET, SO_REUSEADDR,
+(gdb) 
+47          if (status < 0) {
+(gdb) 
+53          if (bind(soc, (struct sockaddr *)self, sizeof(*self)) < 0) {
+(gdb) 
+60          if (listen(soc, num_queue) < 0) {
+(gdb) 
+66          return soc;
+(gdb) 
+67      }
+(gdb) 
+main () at bufserver.c:28
+28              int fd = accept_connection(listenfd);
+(gdb) 
+Waiting for a new connection...
+New connection accepted from 127.0.0.1:35030
+29              if (fd < 0)
+(gdb) n
+35              char buf[BUFSIZE] = {'\0'};
+(gdb) l
+30              {
+31                  continue;
+32              }
+33      
+34              // Receive messages
+35              char buf[BUFSIZE] = {'\0'};
+36              int inbuf = 0;          // How many bytes currently in buffer?
+37              int room = sizeof(buf); // How many bytes remaining in buffer?
+38              char *after = buf;      // Pointer to position after the data in buf
+39      
+(gdb) 
+40              int nbytes;
+41              while ((nbytes = read(fd, after, room)) > 0)
+42              {
+43                  // Step 1: update inbuf (how many bytes were just added?)
+44                  inbuf += nbytes;
+45      
+46                  int where;
+47      
+48                  // Step 2: the loop condition below calls find_network_newline
+49                  // to determine if a full line has been read from the client.
+(gdb) ln
+36              int inbuf = 0;          // How many bytes currently in buffer?
+(gdb) 
+37              int room = sizeof(buf); // How many bytes remaining in buffer?
+(gdb) 
+38              char *after = buf;      // Pointer to position after the data in buf
+(gdb) 
+41              while ((nbytes = read(fd, after, room)) > 0)
+(gdb) 
+44                  inbuf += nbytes;
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+63                      buf[where - 2] = '\0';
+(gdb) 
+64                      printf("Next message: %s\n", buf);
+(gdb) 
+Next message: A stitch in time
+70                      inbuf = inbuf - where;
+(gdb) l
+65                      // Note that we could have also used write to avoid having to
+66                      // put the '\0' in the buffer. Try using write later!
+67      
+68                      // Step 4: update inbuf and remove the full line from the buffer
+69                      // There might be stuff after the line, so don't just do inbuf = 0.
+70                      inbuf = inbuf - where;
+71                      // You want to move the stuff after the full line to the beginning
+72                      // of the buffer.  A loop can do it, or you can use memmove.
+73                      // memmove(destination, source, number_of_bytes)
+74                      memmove(buf, buf + where, inbuf);
+(gdb) l
+75                  }
+76                  // Step 5: update after and room, in preparation for the next read.
+77                  after = buf + inbuf;
+78                  room = BUFSIZE - inbuf;
+79              }
+80              close(fd);
+81          }
+82      
+83          free(self);
+84          close(listenfd);
+(gdb) l
+85          return 0;
+86      }
+87      
+88      /*
+89       * Search the first n characters of buf for a network newline (\r\n).
+90       * Return one plus the index of the '\n' of the first network newline,
+91       * or -1 if no network newline is found.
+92       * Definitely do not use strchr or other string functions to search here. (Why not?)
+93       */
+94      int find_network_newline(const char *buf, int n)
+(gdb) l
+95      {
+96          for (int i = 0; i <= n - 2; i++)
+97          {
+98              if (buf[i + 1] == '\n' && buf[i] == '\r')
+99              {
+100                 return (i + 2);
+101             }
+102         }
+103         return -1;
+104     }
+(gdb) lnlnln
+74                      memmove(buf, buf + where, inbuf);
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+77                  after = buf + inbuf;
+(gdb) 
+78                  room = BUFSIZE - inbuf;
+(gdb) 
+41              while ((nbytes = read(fd, after, room)) > 0)
+(gdb) 
+44                  inbuf += nbytes;
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+63                      buf[where - 2] = '\0';
+(gdb) 
+64                      printf("Next message: %s\n", buf);
+(gdb) 
+Next message: A stitch in time
+70                      inbuf = inbuf - where;
+(gdb) 
+74                      memmove(buf, buf + where, inbuf);
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+77                  after = buf + inbuf;
+(gdb) 
+78                  room = BUFSIZE - inbuf;
+(gdb) 
+41              while ((nbytes = read(fd, after, room)) > 0)
+(gdb) 
+44                  inbuf += nbytes;
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+63                      buf[where - 2] = '\0';
+(gdb) 
+64                      printf("Next message: %s\n", buf);
+(gdb) 
+Next message: A stitch in time
+70                      inbuf = inbuf - where;
+(gdb) 
+74                      memmove(buf, buf + where, inbuf);
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+77                  after = buf + inbuf;
+(gdb) 
+78                  room = BUFSIZE - inbuf;
+(gdb) 
+41              while ((nbytes = read(fd, after, room)) > 0)
+(gdb) 
+44                  inbuf += nbytes;
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+63                      buf[where - 2] = '\0';
+(gdb) 
+64                      printf("Next message: %s\n", buf);
+(gdb) 
+Next message: A stitch in time
+70                      inbuf = inbuf - where;
+(gdb) 
+74                      memmove(buf, buf + where, inbuf);
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+77                  after = buf + inbuf;
+(gdb) 
+78                  room = BUFSIZE - inbuf;
+(gdb) 
+41              while ((nbytes = read(fd, after, room)) > 0)
+(gdb) 
+44                  inbuf += nbytes;
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+63                      buf[where - 2] = '\0';
+(gdb) 
+64                      printf("Next message: %s\n", buf);
+(gdb) 
+Next message: A stitch in time
+70                      inbuf = inbuf - where;
+(gdb) 
+74                      memmove(buf, buf + where, inbuf);
+(gdb) 
+55                  while ((where = find_network_newline(buf, inbuf)) > 0)
+(gdb) 
+77                  after = buf + inbuf;
+(gdb) 
+78                  room = BUFSIZE - inbuf;
+(gdb) 
+41              while ((nbytes = read(fd, after, room)) > 0)
+(gdb) 
+80              close(fd);
+(gdb) 
+28              int fd = accept_connection(listenfd);
+(gdb) 
+Waiting for a new connection...
+New connection accepted from 127.0.0.1:35034
+29              if (fd < 0)
+(gdb) qui[K[K[Kexi[K[K[Kquit
+A debugging session is active.
+
+        Inferior 1 [process 39825] will be killed.
+
+Quit anyway? (y or n) y
+]0;singh800@wolf:/h/u15/c8/00/singh800/singh800/lab10wolf:~/singh800/lab10$ nana[Ki[Ko c[Kclient.1
+[?1049h[22;0;0t[1;43r(B[m[4l[?7h[39;49m[?1h=[?1h=[?1h=[?25l[39;49m(B[m[H[2J[41;20H(B[0;7m[ Reading File ](B[m[41;26H(B[0;7m 0 lines ](B[m[H(B[0;7m  GNU nano 2.9.3          client.1                     [1;54H(B[m[42d(B[0;7m^G(B[m Get Help  (B[0;7m^O(B[m Write Out (B[0;7m^W(B[m Where Is  (B[0;7m^K(B[m Cut Text[43d(B[0;7m^X(B[m Exit[14G(B[0;7m^R(B[m Read File (B[0;7m^\(B[m Replace   (B[0;7m^U(B[m Uncut Text[41d[3d[39;49m(B[m[?12l[?25h[?25l[43;1H[?12l[?25h[?1049l[23;0;0t[?1l>Use "fg" to return to nano.
+
+[1]+  Stopped                 nano client.1
+]0;singh800@wolf:/h/u15/c8/00/singh800/singh800/lab10wolf:~/singh800/lab10$ nano client.1[K[K[K[K[K[K[K[Kserver.1
+[?1049h[22;0;0t[1;43r(B[m[4l[?7h[39;49m[?1h=[?1h=[?1h=[?25l[39;49m(B[m[H[2J[41;20H(B[0;7m[ Reading File ](B[m[41;19H(B[0;7m[ Read 459 lines ](B[m[H(B[0;7m  GNU nano 2.9.3          server.1                     [1;54H(B[m[42d(B[0;7m^G(B[m Get Help  (B[0;7m^O(B[m Write Out (B[0;7m^W(B[m Where Is  (B[0;7m^K(B[m Cut Text[43d(B[0;7m^X(B[m Exit[14G(B[0;7m^R(B[m Read File (B[0;7m^\(B[m Replace   (B[0;7m^U(B[m Uncut Text[41d[3d[39;49m(B[mScript started on 2020-03-18 21:07:07-0400[4d^[]0;singh800@wolf:/h/u15/c8/00/singh800/singh800/lab1$[5;1HGNU gdb (Ubuntu 8.1-0ubuntu3.2) 8.1.0.20180409-git[6dCopyright (C) 2018 Free Software Foundation, Inc.[7dLicense GPLv3+: GNU GPL version 3 or later <http://gnu$[8;1HThis is free software: you are free to change and redi$[9;1HThere is NO WARRANTY, to the extent permitted by law. $[10;1Hand "show warranty" for details.[11dThis GDB was configured as "x86_64-linux-gnu".[12dType "show configuration" for configuration details.[13dFor bug reporting instructions, please see:[14d<http://www.gnu.org/software/gdb/bugs/>.[15dFind the GDB manual and other documentation resources $[16;1H<http://www.gnu.org/software/gdb/documentation/>.[17dFor help, type "help".[18dType "apropos word" to search for commands related to $[19;1HReading symbols from bufserver...done.[20d(gdb) break se^Gt^G_up_server_socket[42m [21d[49m(B[mBreakpoint 1 at 0xf10: file socket.c, line 35.[22d(gdb) run[23dStarting program: /h/u15/c8/00/singh800/singh800/lab10$[25;1HBreakpoint 1, set_up_server_socket ([26;5Hself=0x555555757260, num_queue=5) at socket.c:35[27d35[9Gint set_up_server_socket(struct sockaddr_in *s$[28;1H(gdb) n[29d36[29;13Hint soc = socket(PF_INET, SOCK_STREAM, 0);[30d(gdb)[42m [31d[49m(B[m37[31;13Hif (soc < 0) {[32d(gdb)[42m [33d[49m(B[m44[33;13Hint on = 1;[34d(gdb)[42m [35d[49m(B[m45[35;13Hint status = setsockopt(soc, SOL_SOCKET, S$[36;1H(gdb)[42m [37d[49m(B[m47[37;13Hif (status < 0) {[38d(gdb)[42m [39d[49m(B[m53[39;13Hif (bind(soc, (struct sockaddr *)self, siz$[40;1H(gdb)[42m [3d[49m(B[m[?12l[?25h[?25l[4d[?12l[?25h[?25l[5d[?12l[?25h[?25l[6d[?12l[?25h[?25l[7d[?12l[?25h[?25l[8d[?12l[?25h[?25l[9d[?12l[?25h[?25l[10d[?12l[?25h[?25l[11d[?12l[?25h[?25l[12d[?12l[?25h[?25l[13d[?12l[?25h[?25l[14d[?12l[?25h[?25l[15d[?12l[?25h[?25l[16d[?12l[?25h[?25l[17d[?12l[?25h[?25l[18d[?12l[?25h[?25l[19d[?12l[?25h[?25l[20d[?12l[?25h[?25l[21d[?12l[?25h[?25l[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[41d[K[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H60[22;13Hif (listen(soc, num_queue) < 0) {[23d(gdb)[42m [24d[49m(B[m66[24;13Hreturn soc;[25d(gdb)[42m [26d[49m(B[m67[9G}[27d(gdb)[42m [28d[49m(B[mmain () at bufserver.c:28[29d28[29;17Hint fd = accept_connection(listenfd);[30d(gdb)[42m [31d[49m(B[mWaiting for a new connection...[32dNew connection accepted from 127.0.0.1:35030[33d29[33;17Hif (fd < 0)[34d(gdb) n[35d35[35;17Hchar buf[BUFSIZE] = {'\0'};[36d(gdb) l[37d30[37;17H{[38d31[38;21Hcontinue;[39d32[39;17H}[40d33[42m      [22d[49m(B[m[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H34[22;17H// Receive messages[23d35[23;17Hchar buf[BUFSIZE] = {'\0'};[24d36[24;17Hint inbuf = 0;[24;41H// How many by$[25;1H37[25;17Hint room = sizeof(buf); // How many by$[26;1H38[26;17Hchar *after = buf;[41G// Pointer to $[27;1H39[42m      [28d[49m(B[m(gdb)[42m [29d[49m(B[m40[29;17Hint nbytes;[30d41[30;17Hwhile ((nbytes = read(fd, after, room)$[31;1H42[31;17H{[32d43[32;21H// Step 1: update inbuf (how many $[33;1H44[33;21Hinbuf += nbytes;[34d45[42m      [35d[49m(B[m46[35;21Hint where;[36d47[42m      [37d[49m(B[m48[37;21H// Step 2: the loop condition belo$[38;1H49[38;21H// to determine if a full line has$[39;1H(gdb) l^Hn[40d36[40;17Hint inbuf = 0;[40;41H// How many by$[22;1H[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H(gdb)[42m [23d[49m(B[m37[23;17Hint room = sizeof(buf); // How many by$[24;1H(gdb)[42m [25d[49m(B[m38[25;17Hchar *after = buf;[41G// Pointer to $[26;1H(gdb)[42m [27d[49m(B[m41[27;17Hwhile ((nbytes = read(fd, after, room)$[28;1H(gdb)[42m [29d[49m(B[m44[29;21Hinbuf += nbytes;[30d(gdb)[42m [31d[49m(B[m55[31;21Hwhile ((where = find_network_newli$[32;1H(gdb)[42m [33d[49m(B[m63[33;25Hbuf[where - 2] = '\0';[34d(gdb)[42m [35d[49m(B[m64[35;25Hprintf("Next message: %s\n", b$[36;1H(gdb)[42m [37d[49m(B[mNext message: A stitch in time[38d70[38;25Hinbuf = inbuf - where;[39d(gdb) l[40d65[40;25H// Note that we could have als$[22;1H[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H66[22;25H// put the '\0' in the buffer.$[23;1H67[42m      [24d[49m(B[m68[24;25H// Step 4: update inbuf and re$[25;1H69[25;25H// There might be stuff after $[26;1H70[26;25Hinbuf = inbuf - where;[27d71[27;25H// You want to move the stuff $[28;1H72[28;25H// of the buffer.  A loop can $[29;1H73[29;25H// memmove(destination, source$[30;1H74[30;25Hmemmove(buf, buf + where, inbu$[31;1H(gdb) l[32d75[32;21H}[33d76[33;21H// Step 5: update after and room, $[34;1H77[34;21Hafter = buf + inbuf;[35d78[35;21Hroom = BUFSIZE - inbuf;[36d79[36;17H}[37d80[37;17Hclose(fd);[38d81[38;13H}[39d82[42m      [40d[49m(B[m83[40;13Hfree(self);[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H84[22;13Hclose(listenfd);[23d(gdb) l[24d85[24;13Hreturn 0;[25d86[9G}[26d87[42m      [27d[49m(B[m88[9G/*[28d89[10G* Search the first n characters of buf for a $[29;1H90[10G* Return one plus the index of the '\n' of th$[30;1H91[10G* or -1 if no network newline is found.[31d92[10G* Definitely do not use strchr or other strin$[32;1H93[10G*/[33d94[9Gint find_network_newline(const char *buf, int $[34;1H(gdb) l[35d95[9G{[36d96[36;13Hfor (int i = 0; i <= n - 2; i++)[37d97[37;13H{[38d98[38;17Hif (buf[i + 1] == '\n' && buf[i] == '\$[39;1H99[39;17H{[40d100[40;21Hreturn (i + 2);[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H101[22;17H}[23d102[23;13H}[24d103[24;13Hreturn -1;[25d104     }[26d(gdb) l^Hn^Hl^Hn^Hl^Hn[27d74[27;25Hmemmove(buf, buf + where, inbu$[28;1H(gdb)[42m [29d[49m(B[m55[29;21Hwhile ((where = find_network_newli$[30;1H(gdb)[42m [31d[49m(B[m77[31;21Hafter = buf + inbuf;[32d(gdb)[42m [33d[49m(B[m78[33;21Hroom = BUFSIZE - inbuf;[34d(gdb)[42m [35d[49m(B[m41[35;17Hwhile ((nbytes = read(fd, after, room)$[36;1H(gdb)[42m [37d[49m(B[m44[37;21Hinbuf += nbytes;[38d(gdb)[42m [39d[49m(B[m55[39;21Hwhile ((where = find_network_newli$[40;1H(gdb)[42m [22d[49m(B[m[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H63[22;25Hbuf[where - 2] = '\0';[23d(gdb)[42m [24d[49m(B[m64[24;25Hprintf("Next message: %s\n", b$[25;1H(gdb)[42m [26d[49m(B[mNext message: A stitch in time[27d70[27;25Hinbuf = inbuf - where;[28d(gdb)[42m [29d[49m(B[m74[29;25Hmemmove(buf, buf + where, inbu$[30;1H(gdb)[42m [31d[49m(B[m55[31;21Hwhile ((where = find_network_newli$[32;1H(gdb)[42m [33d[49m(B[m77[33;21Hafter = buf + inbuf;[34d(gdb)[42m [35d[49m(B[m78[35;21Hroom = BUFSIZE - inbuf;[36d(gdb)[42m [37d[49m(B[m41[37;17Hwhile ((nbytes = read(fd, after, room)$[38;1H(gdb)[42m [39d[49m(B[m44[39;21Hinbuf += nbytes;[40d(gdb)[42m [22d[49m(B[m[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l[3d63 [3;17H [25Gbuf[where - 2] = '\0';[4d(gdb)[42m [49m(B[m[K[5d64 [5;13H            printf("Next message: %s\n", b$[6;1H(gdb)[42m [49m(B[m[K[7dNext message: A stitch in time[8d70[8;25Hinbuf = inbuf - where;[K[10d74[10;21H    memmove(buf, buf + where, inbu[12d55[12;21Hwhile ((where = find_network_newli$[14;2H7[14;21Hafter = buf +[3P[16d78[16;17H    room = BUFSIZE - inbuf;[K[18d41[18;17Hwhile ((nbytes = read(fd, after, room)$[20;1H44[20;21Hinbuf += nbytes;[K[22d55[22;21Hwhile (([35G= find_network_newli$[24;2H3[24;25Hbuf[where - 2] = '\0';[K[26d64[22X[26;25Hprintf("Next message: %s\n", b$[27;1H(gdb)[42m [49m(B[m[K[28dNext message: A stitch in time[29d70[29;25Hinbuf = inbuf - where;[K[31d74[31;21H    memmove(buf, buf + where, inbu[33d55[33;21Hwhile ((where = find_network_newli$[35;2H7[35;21Hafter = buf +[3P[37d78[37;17H    room = BUFSIZE - inbuf;[K[39d41[39;17Hwhile ((nbytes = read(fd, after, room)$[22;1H[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l[2;40r[2;1H[2T[1;43r[3;1H55[3;21Hwhile ((where = find_network_newli$[4;1H(gdb)[42m [22d[49m(B[m[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l[2;40r[2;1H[2T[1;43r[3;1H44[3;21Hinbuf += nbytes;[4d(gdb)[42m [40d[49m(B[mrd" to search for commands related to "word"...[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1HReading symbols from bufserver...done.[23d(gdb) break se^Gt^G_up_server_socket[42m [24d[49m(B[mBreakpoint 1 at 0xf10: file socket.c, line 35.[25d(gdb) run[26dStarting program: /h/u15/c8/00/singh800/singh800/lab10$[28;1HBreakpoint 1, set_up_server_socket ([29;5Hself=0x555555757260, num_queue=5) at socket.c:35[30d35[9Gint set_up_server_socket(struct sockaddr_in *s$[31;1H(gdb) n[32d36[32;13Hint soc = socket(PF_INET, SOCK_STREAM, 0);[33d(gdb)[42m [34d[49m(B[m37[34;13Hif (soc < 0) {[35d(gdb)[42m [36d[49m(B[m44[36;13Hint on = 1;[37d(gdb)[42m [38d[49m(B[m45[38;13Hint status = setsockopt(soc, SOL_SOCKET, S$[39;1H(gdb)[42m [40d[49m(B[m47[40;13Hif (status < 0) {[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H(gdb)[42m [23d[49m(B[m53[23;13Hif (bind(soc, (struct sockaddr *)self, siz$[24;1H(gdb)[42m [25d[49m(B[m60[25;13Hif (listen(soc, num_queue) < 0) {[26d(gdb)[42m [27d[49m(B[m66[27;13Hreturn soc;[28d(gdb)[42m [29d[49m(B[m67[9G}[30d(gdb)[42m [31d[49m(B[mmain () at bufserver.c:28[32d28[32;17Hint fd = accept_connection(listenfd);[33d(gdb)[42m [34d[49m(B[mWaiting for a new connection...[35dNew connection accepted from 127.0.0.1:35030[36d29[36;17Hif (fd < 0)[37d(gdb) n[38d35[38;17Hchar buf[BUFSIZE] = {'\0'};[39d(gdb) l[40d30[40;17H{[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H31[22;21Hcontinue;[23d32[23;17H}[24d33[42m      [25d[49m(B[m34[25;17H// Receive messages[26d35[26;17Hchar buf[BUFSIZE] = {'\0'};[27d36[27;17Hint inbuf = 0;[27;41H// How many by$[28;1H37[28;17Hint room = sizeof(buf); // How many by$[29;1H38[29;17Hchar *after = buf;[41G// Pointer to $[30;1H39[42m      [31d[49m(B[m(gdb)[42m [32d[49m(B[m40[32;17Hint nbytes;[33d41[33;17Hwhile ((nbytes = read(fd, after, room)$[34;1H42[34;17H{[35d43[35;21H// Step 1: update inbuf (how many $[36;1H44[36;21Hinbuf += nbytes;[37d45[42m      [38d[49m(B[m46[38;21Hint where;[39d47[42m      [40d[49m(B[m48[40;21H// Step 2: the loop condition belo$[22;1H[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H49[22;21H// to determine if a full line has$[23;1H(gdb) l^Hn[24d36[24;17Hint inbuf = 0;[24;41H// How many by$[25;1H(gdb)[42m [26d[49m(B[m37[26;17Hint room = sizeof(buf); // How many by$[27;1H(gdb)[42m [28d[49m(B[m38[28;17Hchar *after = buf;[41G// Pointer to $[29;1H(gdb)[42m [30d[49m(B[m41[30;17Hwhile ((nbytes = read(fd, after, room)$[31;1H(gdb)[42m [32d[49m(B[m44[32;21Hinbuf += nbytes;[33d(gdb)[42m [34d[49m(B[m55[34;21Hwhile ((where = find_network_newli$[35;1H(gdb)[42m [36d[49m(B[m63[36;25Hbuf[where - 2] = '\0';[37d(gdb)[42m [38d[49m(B[m64[38;25Hprintf("Next message: %s\n", b$[39;1H(gdb)[42m [40d[49m(B[mNext message: A stitch in time[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H70[22;25Hinbuf = inbuf - where;[23d(gdb) l[24d65[24;25H// Note that we could have als$[25;1H66[25;25H// put the '\0' in the buffer.$[26;1H67[42m      [27d[49m(B[m68[27;25H// Step 4: update inbuf and re$[28;1H69[28;25H// There might be stuff after $[29;1H70[29;25Hinbuf = inbuf - where;[30d71[30;25H// You want to move the stuff $[31;1H72[31;25H// of the buffer.  A loop can $[32;1H73[32;25H// memmove(destination, source$[33;1H74[33;25Hmemmove(buf, buf + where, inbu$[34;1H(gdb) l[35d75[35;21H}[36d76[36;21H// Step 5: update after and room, $[37;1H77[37;21Hafter = buf + inbuf;[38d78[38;21Hroom = BUFSIZE - inbuf;[39d79[39;17H}[40d80[40;17Hclose(fd);[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H81[22;13H}[23d82[42m      [24d[49m(B[m83[24;13Hfree(self);[25d84[25;13Hclose(listenfd);[26d(gdb) l[27d85[27;13Hreturn 0;[28d86[9G}[29d87[42m      [30d[49m(B[m88[9G/*[31d89[10G* Search the first n characters of buf for a $[32;1H90[10G* Return one plus the index of the '\n' of th$[33;1H91[10G* or -1 if no network newline is found.[34d92[10G* Definitely do not use strchr or other strin$[35;1H93[10G*/[36d94[9Gint find_network_newline(const char *buf, int $[37;1H(gdb) l[38d95[9G{[39d96[39;13Hfor (int i = 0; i <= n - 2; i++)[40d97[40;13H{[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H98[22;17Hif (buf[i + 1] == '\n' && buf[i] == '\$[23;1H99[23;17H{[24d100[24;21Hreturn (i + 2);[25d101[25;17H}[26d102[26;13H}[27d103[27;13Hreturn -1;[28d104     }[29d(gdb) l^Hn^Hl^Hn^Hl^Hn[30d74[30;25Hmemmove(buf, buf + where, inbu$[31;1H(gdb)[42m [32d[49m(B[m55[32;21Hwhile ((where = find_network_newli$[33;1H(gdb)[42m [34d[49m(B[m77[34;21Hafter = buf + inbuf;[35d(gdb)[42m [36d[49m(B[m78[36;21Hroom = BUFSIZE - inbuf;[37d(gdb)[42m [38d[49m(B[m41[38;17Hwhile ((nbytes = read(fd, after, room)$[39;1H(gdb)[42m [40d[49m(B[m44[40;21Hinbuf += nbytes;[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H(gdb)[42m [23d[49m(B[m55[23;21Hwhile ((where = find_network_newli$[24;1H(gdb)[42m [25d[49m(B[m63[25;25Hbuf[where - 2] = '\0';[26d(gdb)[42m [27d[49m(B[m64[27;25Hprintf("Next message: %s\n", b$[28;1H(gdb)[42m [29d[49m(B[mNext message: A stitch in time[30d70[30;25Hinbuf = inbuf - where;[31d(gdb)[42m [32d[49m(B[m74[32;25Hmemmove(buf, buf + where, inbu$[33;1H(gdb)[42m [34d[49m(B[m55[34;21Hwhile ((where = find_network_newli$[35;1H(gdb)[42m [36d[49m(B[m77[36;21Hafter = buf + inbuf;[37d(gdb)[42m [38d[49m(B[m78[38;21Hroom = BUFSIZE - inbuf;[39d(gdb)[42m [40d[49m(B[m41[40;17Hwhile ((nbytes = read(fd, after, room)$[22;1H[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l[11;40r[11;1H[2T[1;43r[3;1H(gdb)[42m [49m(B[m[K[4d55[4;17H    while ((where = find_network_newli$[5;1H(gdb)[42m [49m(B[m[K[6d63 [6;17H [25Gbuf[where - 2] = '\0';[7d(gdb)[42m [49m(B[m[K[8d64 [8;13H            printf("Next message: %s\n", b$[9;1H(gdb)[42m [49m(B[m[K[10dNext message: A stitch in time[11d70[11;25Hinbuf = inbuf - where;[12d(gdb)[42m [22d[49m(B[m[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[ messages[26d35[26;17Hchar buf[BUFSIZE] = {'\0'};[27d36[27;17Hint inbuf = 0;[27;41H// How many by$[28;1H37[28;17Hint room = sizeof(buf); // How many by$[29;1H38[29;17Hchar *after = buf;[41G// Pointer to $[30;1H39[42m      [31d[49m(B[m(gdb)[42m [32d[49m(B[m40[32;17Hint nbytes;[33d41[33;17Hwhile ((nbytes = read(fd, after, room)$[34;1H42[34;17H{[35d43[35;21H// Step 1: update inbuf (how many $[36;1H44[36;21Hinbuf += nbytes;[37d45[42m      [38d[49m(B[m46[38;21Hint where;[39d47[42m      [40d[49m(B[m48[40;21H// Step 2: the loop condition belo$[22;1H[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H49[22;21H// to determine if a full line has$[23;1H(gdb) l^Hn[24d36[24;17Hint inbuf = 0;[24;41H// How many by$[25;1H(gdb)[42m [26d[49m(B[m37[26;17Hint room = sizeof(buf); // How many by$[27;1H(gdb)[42m [28d[49m(B[m38[28;17Hchar *after = buf;[41G// Pointer to $[29;1H(gdb)[42m [30d[49m(B[m41[30;17Hwhile ((nbytes = read(fd, after, room)$[31;1H(gdb)[42m [32d[49m(B[m44[32;21Hinbuf += nbytes;[33d(gdb)[42m [34d[49m(B[m55[34;21Hwhile ((where = find_network_newli$[35;1H(gdb)[42m [36d[49m(B[m63[36;25Hbuf[where - 2] = '\0';[37d(gdb)[42m [38d[49m(B[m64[38;25Hprintf("Next message: %s\n", b$[39;1H(gdb)[42m [40d[49m(B[mNext message: A stitch in time[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H70[22;25Hinbuf = inbuf - where;[23d(gdb) l[24d65[24;25H// Note that we could have als$[25;1H66[25;25H// put the '\0' in the buffer.$[26;1H67[42m      [27d[49m(B[m68[27;25H// Step 4: update inbuf and re$[28;1H69[28;25H// There might be stuff after $[29;1H70[29;25Hinbuf = inbuf - where;[30d71[30;25H// You want to move the stuff $[31;1H72[31;25H// of the buffer.  A loop can $[32;1H73[32;25H// memmove(destination, source$[33;1H74[33;25Hmemmove(buf, buf + where, inbu$[34;1H(gdb) l[35d75[35;21H}[36d76[36;21H// Step 5: update after and room, $[37;1H77[37;21Hafter = buf + inbuf;[38d78[38;21Hroom = BUFSIZE - inbuf;[39d79[39;17H}[40d80[40;17Hclose(fd);[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H81[22;13H}[23d82[42m      [24d[49m(B[m83[24;13Hfree(self);[25d84[25;13Hclose(listenfd);[26d(gdb) l[27d85[27;13Hreturn 0;[28d86[9G}[29d87[42m      [30d[49m(B[m88[9G/*[31d89[10G* Search the first n characters of buf for a $[32;1H90[10G* Return one plus the index of the '\n' of th$[33;1H91[10G* or -1 if no network newline is found.[34d92[10G* Definitely do not use strchr or other strin$[35;1H93[10G*/[36d94[9Gint find_network_newline(const char *buf, int $[37;1H(gdb) l[38d95[9G{[39d96[39;13Hfor (int i = 0; i <= n - 2; i++)[40d97[40;13H{[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H98[22;17Hif (buf[i + 1] == '\n' && buf[i] == '\$[23;1H99[23;17H{[24d100[24;21Hreturn (i + 2);[25d101[25;17H}[26d102[26;13H}[27d103[27;13Hreturn -1;[28d104     }[29d(gdb) l^Hn^Hl^Hn^Hl^Hn[30d74[30;25Hmemmove(buf, buf + where, inbu$[31;1H(gdb)[42m [32d[49m(B[m55[32;21Hwhile ((where = find_network_newli$[33;1H(gdb)[42m [34d[49m(B[m77[34;21Hafter = buf + inbuf;[35d(gdb)[42m [36d[49m(B[m78[36;21Hroom = BUFSIZE - inbuf;[37d(gdb)[42m [38d[49m(B[m41[38;17Hwhile ((nbytes = read(fd, after, room)$[39;1H(gdb)[42m [40d[49m(B[m44[40;21Hinbuf += nbytes;[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l7[3;41r8[41d[19S[1;43r[22;1H(gdb)[42m [23d[49m(B[m55[23;21Hwhile ((where = find_network_newli$[24;1H(gdb)[42m [25d[49m(B[m63[25;25Hbuf[where - 2] = '\0';[26d(gdb)[42m [27d[49m(B[m64[27;25Hprintf("Next message: %s\n", b$[28;1H(gdb)[42m [29d[49m(B[mNext message: A stitch in time[30d70[30;25Hinbuf = inbuf - where;[31d(gdb)[42m [32d[49m(B[m74[32;25Hmemmove(buf, buf + where, inbu$[33;1H(gdb)[42m [34d[49m(B[m55[34;21Hwhile ((where = find_network_newli$[35;1H(gdb)[42m [36d[49m(B[m77[36;21Hafter = buf + inbuf;[37d(gdb)[42m [38d[49m(B[m78[38;21Hroom = BUFSIZE - inbuf;[39d(gdb)[42m [40d[49m(B[m41[40;17Hwhile ((nbytes = read(fd, after, room)$[22;1H[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l[11;40r[11;1H[2T[1;43r[3;1H(gdb)[42m [49m(B[m[K[4d55[4;17H    while ((where = find_network_newli$[5;1H(gdb)[42m [49m(B[m[K[6d63 [6;17H [25Gbuf[where - 2] = '\0';[7d(gdb)[42m [49m(B[m[K[8d64 [8;13H            printf("Next message: %s\n", b$[9;1H(gdb)[42m [49m(B[m[K[10dNext message: A stitch in time[11d70[11;25Hinbuf = inbuf - where;[12d(gdb)[42m [22d[49m(B[m[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l[2;40r[2;1H[2T[1;43r[3;1H(gdb)[42m [4d[49m(B[m44[4;21Hinbuf += nbytes;[22d[?12l[?25h[?25l[23d[?12l[?25h[?25l[24d[?12l[?25h[?25l[25d[?12l[?25h[?25l[26d[?12l[?25h[?25l[27d[?12l[?25h[?25l[28d[?12l[?25h[?25l[29d[?12l[?25h[?25l[30d[?12l[?25h[?25l[31d[?12l[?25h[?25l[32d[?12l[?25h[?25l[33d[?12l[?25h[?25l[34d[?12l[?25h[?25l[35d[?12l[?25h[?25l[36d[?12l[?25h[?25l[37d[?12l[?25h[?25l[38d[?12l[?25h[?25l[39d[?12l[?25h[?25l[40d[?12l[?25h[?25l[2;40r[2;1H[2T[1;43r[3;1H(gdb)[42m [4d[49m(B[m41[4;17Hwhile ((nbytes = read(fd, after, room)$[22;1H[?12l[?25h[?25

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "parallel_closest.h": "c",
+        "point.h": "c",
+        "unistd.h": "c"
+    }
+}
